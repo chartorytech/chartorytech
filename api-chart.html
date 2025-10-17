@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chartory Tech — API Live Chart</title>
+  <style>
+    :root { --bg:#0d1117; --panel:#0b1117; --card:#111822; --text:#e6edf3; --muted:#9da7b3; --line:#1f2630; }
+    * { box-sizing:border-box; } html,body { height:100%; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; display:flex; flex-direction:column; }
+    header { display:flex; gap:10px; align-items:center; padding:10px 12px; background:var(--panel); border-bottom:1px solid var(--line); }
+    header h1 { font-size:16px; margin:0 8px 0 0; opacity:.9; white-space:nowrap; }
+    input, select, button { background:#0f141b; color:var(--text); border:1px solid #2a3544; padding:8px 10px; border-radius:8px; }
+    button { background:#238636; border-color:#1f6f30; cursor:pointer; }
+    #wrap { flex:1; display:flex; }
+    #chart { flex:1; }
+    #side { width:280px; border-left:1px solid var(--line); background:var(--panel); padding:10px; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .tip { color:var(--muted); font-size:12px; margin-top:8px; }
+  </style>
+  <!-- Lightweight Charts (오픈소스) -->
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <header>
+    <h1>📡 API Live Chart</h1>
+    <div class="row">
+      <label>심볼</label><input id="sym" value="BTCUSDT" size="12" />
+      <label>주기</label>
+      <select id="intv">
+        <option>1m</option><option>5m</option><option>15m</option>
+        <option selected>1h</option><option>4h</option><option>1d</option>
+      </select>
+      <label>마켓</label>
+      <select id="market">
+        <option value="spot" selected>Spot</option>
+        <option value="futures">Futures</option>
+      </select>
+      <button id="loadBtn">불러오기</button>
+    </div>
+  </header>
+
+  <div id="wrap">
+    <div id="chart"></div>
+    <aside id="side">
+      <div class="row" style="margin-bottom:10px;">
+        <button data-s="BTCUSDT">BTC</button>
+        <button data-s="ETHUSDT">ETH</button>
+        <button data-s="SOLUSDT">SOL</button>
+        <button data-s="XRPUSDT">XRP</button>
+      </div>
+      <div class="tip">
+        • 데이터 출처: Binance REST + WebSocket<br/>
+        • API Key 불필요(공개 시세).<br/>
+        • Futures로 바꾸면 선물 마켓 데이터 사용.<br/>
+      </div>
+      <div class="tip" id="info"></div>
+    </aside>
+  </div>
+
+  <script>
+    // ---------- 유틸 ----------
+    const q = (id)=>document.getElementById(id);
+    const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+
+    // REST / WS 엔드포인트 (현물/선물 전환)
+    const EP = {
+      spot:   { rest: 'https://api.binance.com/api/v3/klines',
+                ws:   'wss://stream.binance.com:9443/ws/' },
+      futures:{ rest: 'https://fapi.binance.com/fapi/v1/klines',
+                ws:   'wss://fstream.binance.com/ws/' }
+    };
+
+    // interval 매핑 (LightweightCharts는 초 단위 timestamp 사용)
+    const MAP_INT = { '1m':'1m','5m':'5m','15m':'15m','1h':'1h','4h':'4h','1d':'1d' };
+
+    // ---------- 차트 만들기 ----------
+    const chart = LightweightCharts.createChart(q('chart'), {
+      layout: { background: { color: '#0d1117' }, textColor: '#d1d7e0' },
+      grid:   { vertLines:{ color:'#1f2630' }, horzLines:{ color:'#1f2630' } },
+      timeScale: { borderColor:'#1f2630', timeVisible:true, secondsVisible:false },
+      rightPriceScale: { borderColor:'#1f2630' },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    });
+    const candleSeries = chart.addCandlestickSeries({
+      upColor:'#26a69a', downColor:'#ef5350', wickUpColor:'#26a69a', wickDownColor:'#ef5350', borderVisible:false
+    });
+    const volSeries = chart.addHistogramSeries({ priceFormat:{ type:'volume' }, priceScaleId:'', color:'#3b82f6', base:0, scaleMargins:{ top:0.8, bottom:0 } });
+
+    let ws;                        // WebSocket 핸들
+    let lastBar = null;            // 마지막 캔들(동일 시간대 업데이트용)
+
+    function closeWS(){ if(ws && ws.readyState===1){ ws.close(1000,'switch'); } }
+
+    // ---------- 데이터 로드 ----------
+    async function load(symbol='BTCUSDT', interval='1h', market='spot'){
+      try{
+        closeWS();
+        q('info').textContent = '불러오는 중…';
+        const rest = EP[market].rest;
+        const url  = `${rest}?symbol=${symbol.toUpperCase()}&interval=${MAP_INT[interval]}&limit=500`;
+        const resp = await fetch(url);
+        const raw  = await resp.json();
+        // REST 응답(kline): [ openTime, open, high, low, close, volume, closeTime, ... ]
+        const candles = raw.map(r => ({
+          time: Math.floor(r[0] / 1000), // 초 단위
+          open: parseFloat(r[1]),
+          high: parseFloat(r[2]),
+          low:  parseFloat(r[3]),
+          close:parseFloat(r[4]),
+          volume: parseFloat(r[5]),
+        }));
+        candleSeries.setData(candles);
+        volSeries.setData(candles.map(c => ({ time:c.time, value:c.volume })));
+        lastBar = candles[candles.length-1];
+
+        // WS 구독
+        const stream = `${symbol.toLowerCase()}@kline_${MAP_INT[interval]}`;
+        const wsURL  = EP[market].ws + stream;
+        ws = new WebSocket(wsURL);
+        ws.onopen = () => q('info').textContent = `실시간 연결됨: ${symbol} ${interval} (${market})`;
+        ws.onmessage = (ev)=> {
+          const msg = JSON.parse(ev.data);
+          const k = msg.k; // kline payload
+          const bar = {
+            time: Math.floor(k.t/1000),
+            open: parseFloat(k.o),
+            high: parseFloat(k.h),
+            low:  parseFloat(k.l),
+            close:parseFloat(k.c),
+            volume: parseFloat(k.v),
+          };
+          if (bar.time === lastBar.time){
+            // 같은 캔들 업데이트
+            candleSeries.update(bar);
+            volSeries.update({ time:bar.time, value:bar.volume });
+          } else if (bar.time > lastBar.time){
+            // 새 캔들 시작
+            candleSeries.update(bar);
+            volSeries.update({ time:bar.time, value:bar.volume });
+            lastBar = bar;
+          }
+        };
+        ws.onclose = ()=> q('info').textContent = '실시간 연결 종료';
+        ws.onerror = ()=> q('info').textContent = 'WS 오류';
+      }catch(e){
+        console.error(e);
+        q('info').textContent = '로드 실패. 잠시 후 다시 시도하세요.';
+      }
+    }
+
+    // ---------- UI 이벤트 ----------
+    q('loadBtn').addEventListener('click', ()=>{
+      const s = q('sym').value.trim().toUpperCase() || 'BTCUSDT';
+      const i = q('intv').value;
+      const m = q('market').value;
+      history.replaceState(null,'',`?symbol=${s}&interval=${i}&market=${m}`);
+      load(s,i,m);
+    });
+    document.querySelectorAll('#side button[data-s]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        q('sym').value = btn.dataset.s;
+        q('loadBtn').click();
+      });
+    });
+
+    // ---------- 초기 로드 (URL 파라미터 지원) ----------
+    const urlp = new URLSearchParams(location.search);
+    q('sym').value    = (urlp.get('symbol')||'BTCUSDT').toUpperCase();
+    q('intv').value   = urlp.get('interval') || '1h';
+    q('market').value = urlp.get('market') || 'spot';
+    load(q('sym').value, q('intv').value, q('market').value);
+
+    // 반응형
+    const ro = new ResizeObserver(()=> chart.timeScale().fitContent());
+    ro.observe(q('chart'));
+  </script>
+</body>
+</html>
