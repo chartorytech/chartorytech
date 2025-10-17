@@ -6,48 +6,76 @@
   <title>ChartoryTech</title>
   <style>
     :root{
-      --bg1:#0d2b6a; --bg2:#052154; --accent:#3aa5ff; --accent2:#1e4bd1; --text:#ffffff;
+      --bg1:#0b1e46; --bg2:#071734; --text:#ffffff;
+      --gold1:#ffe083; --gold2:#f4c64f; --gold3:#c99624; --goldShadow:rgba(0,0,0,.35);
+      --up:#6fd4ff; --down:#2f68ff; --ma1:#8ad7ff; --ma2:#3aa5ff;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;background:radial-gradient(1200px 600px at 20% 20%, rgba(58,165,255,.25), transparent), linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);font-family:'Pretendard','Noto Sans KR',system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif;}
+    body{margin:0;background:radial-gradient(1200px 700px at 20% 15%, rgba(70,140,255,.25), transparent), linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);font-family:'Pretendard','Noto Sans KR',system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif;}
 
-    .grid{position:fixed;inset:0;pointer-events:none;opacity:.18;background-image:linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);background-size:60px 60px;}
+    /* 그리드 배경 */
+    .grid{position:fixed;inset:0;pointer-events:none;opacity:.15;background-image:linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);background-size:60px 60px;}
 
     .hero{display:flex;align-items:center;justify-content:center;min-height:100%;padding:40px 16px;position:relative;overflow:hidden;}
-    .wrap{max-width:1100px;width:100%;display:flex;align-items:center;gap:36px;z-index:2;position:relative;}
-    .logo{width:132px;height:132px;background:linear-gradient(180deg,#43b1ff,#1e57ff);border-radius:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 25px 60px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15);}
-    .logo img{width:88px;height:88px;display:block}
+    .wrap{max-width:1200px;width:100%;display:flex;align-items:center;gap:36px;z-index:2;position:relative;}
+
+    /* GOLD LOGO */
+    .logo{width:136px;height:136px;border-radius:28px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));box-shadow:0 25px 60px var(--goldShadow), inset 0 1px 0 rgba(255,255,255,.15);}
+    .logo svg{width:110px;height:110px;display:block;filter: drop-shadow(0 6px 14px rgba(0,0,0,.35));}
 
     .title{font-size:64px;line-height:1.05;font-weight:800;letter-spacing:-.5px;margin:0}
-    .subtitle{margin-top:18px;font-size:18px;color:rgba(255,255,255,.85)}
+    .subtitle{margin-top:18px;font-size:18px;color:rgba(255,255,255,.9)}
 
     .cta{margin-top:28px}
-    .btn{appearance:none;border:none;cursor:pointer;padding:16px 26px;border-radius:999px;background:linear-gradient(90deg,#2fa5ff,#1e4bd1);color:#fff;font-weight:800;font-size:18px;box-shadow:0 10px 30px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.25);}
+    .btn{appearance:none;border:none;cursor:pointer;padding:16px 26px;border-radius:999px;background:linear-gradient(90deg,#2fa5ff,#1e4bd1);color:#fff;font-weight:800;font-size:18px;box-shadow:0 10px 30px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.25);}    
     .btn:hover{filter:brightness(1.05)}
 
-    /* 캔들 차트 모양 배경 */
-    .candles{position:absolute;inset:0;pointer-events:none;opacity:0.5;z-index:1;}
-    .candle{position:absolute;width:6px;border-radius:2px;}
-    .wick{position:absolute;width:2px;left:2px;}
+    /* 캔들/MA 배경 캔버스 */
+    canvas.bg{position:absolute;inset:0;z-index:1;opacity:.9;}
 
-    /* 반응형 */
     @media (max-width:900px){
       .wrap{flex-direction:column;gap:18px;text-align:center}
       .title{font-size:40px}
-      .logo{width:108px;height:108px}
-      .logo img{width:72px;height:72px}
+      .logo{width:120px;height:120px}
+      .logo svg{width:96px;height:96px}
     }
   </style>
 </head>
 <body>
   <div class="grid"></div>
-  <section class="hero">
-    <!-- 캔들 모양 배경 -->
-    <div class="candles" id="candles"></div>
 
+  <!-- 상승 캔들과 이평선이 함께 보이는 배경 -->
+  <canvas id="bgChart" class="bg" aria-hidden></canvas>
+
+  <section class="hero">
     <div class="wrap">
-      <div class="logo"><img src="chartorytech-logo-blue.png" alt="ChartoryTech Logo" /></div>
+
+      <!-- GOLD CT + 차트 심볼 (배경 없음) -->
+      <div class="logo" title="ChartoryTech">
+        <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" aria-label="ChartoryTech Gold Logo">
+          <defs>
+            <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fff3b0"/>
+              <stop offset="35%" stop-color="#ffe083"/>
+              <stop offset="70%" stop-color="#f4c64f"/>
+              <stop offset="100%" stop-color="#c99624"/>
+            </linearGradient>
+          </defs>
+          <!-- 외곽 링 (C) -->
+          <circle cx="128" cy="128" r="100" fill="none" stroke="url(#goldGrad)" stroke-width="28" stroke-linecap="round"/>
+          <!-- 내측 C 곡선 두께감 -->
+          <path d="M196 80c-12-12-34-24-68-24-52 0-84 35-84 72s32 72 84 72" fill="none" stroke="url(#goldGrad)" stroke-width="20" stroke-linecap="round"/>
+          <!-- 차트 막대 3개 -->
+          <rect x="108" y="138" width="14" height="34" rx="4" fill="url(#goldGrad)"/>
+          <rect x="132" y="120" width="14" height="52" rx="4" fill="url(#goldGrad)"/>
+          <rect x="156" y="90" width="14" height="82" rx="4" fill="url(#goldGrad)"/>
+          <!-- T 기둥 -->
+          <rect x="176" y="70" width="16" height="120" rx="6" fill="url(#goldGrad)"/>
+          <rect x="148" y="70" width="44" height="16" rx="6" fill="url(#goldGrad)"/>
+        </svg>
+      </div>
+
       <div>
         <h1 class="title">ChartoryTech</h1>
         <p class="subtitle">실시간 데이터 · 정확한 트레이딩 인사이트</p>
@@ -59,30 +87,119 @@
   </section>
 
   <script>
-    // 캔들 생성 스크립트 (랜덤 배경 효과)
-    const candles = document.getElementById('candles');
-    const colors = ['#6fb6ff','#3aa5ff','#1e4bd1','#45d1ff'];
+    // ===== 배경 차트: 우상향 캔들 + MA 라인 =====
+    const canvas = document.getElementById('bgChart');
+    const ctx = canvas.getContext('2d');
 
-    for(let i=0;i<80;i++){
-      const candle = document.createElement('div');
-      const wick = document.createElement('div');
-      const height = 40 + Math.random()*120;
-      const x = i*20 + Math.random()*5;
-      const y = 400 - height - Math.random()*50;
-      const color = colors[Math.floor(Math.random()*colors.length)];
-      candle.className = 'candle';
-      candle.style.height = height+'px';
-      candle.style.left = x+'px';
-      candle.style.bottom = y+'px';
-      candle.style.background = color;
-      wick.className = 'wick';
-      wick.style.height = (height+20)+'px';
-      wick.style.bottom = (y-10)+'px';
-      wick.style.background = color;
-      candle.appendChild(wick);
-      candles.appendChild(candle);
+    function resize(){
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(innerWidth * dpr);
+      canvas.height = Math.floor(innerHeight * dpr);
+      canvas.style.width = innerWidth + 'px';
+      canvas.style.height = innerHeight + 'px';
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      draw();
+    }
+    window.addEventListener('resize', resize);
+
+    function genSeries(n){
+      // 우상향 베이스 + 노이즈
+      let price = 100; const arr = [];
+      for(let i=0;i<n;i++){
+        const drift = 0.25; // 상승 기울기
+        const noise = (Math.random()-0.5)*1.8;
+        const open = price;
+        price = Math.max(10, price + drift + noise);
+        const close = price;
+        const high = Math.max(open, close) + Math.random()*2.5;
+        const low  = Math.min(open, close) - Math.random()*2.5;
+        arr.push({open, high, low, close});
+      }
+      return arr;
     }
 
+    function SMA(src, len){
+      const out=[]; let sum=0; const q=[];
+      for(let i=0;i<src.length;i++){
+        q.push(src[i].close); sum+=src[i].close;
+        if(q.length>len) sum-=q.shift();
+        out.push(q.length===len? sum/len : null);
+      }
+      return out;
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const W = canvas.width, H = canvas.height;
+      const PAD = Math.max(40, H*0.08);
+      const N = Math.floor(W/18); // 캔들 개수
+      const series = genSeries(N);
+
+      const values = series.flatMap(o=>[o.low,o.high]);
+      const min = Math.min(...values), max = Math.max(...values);
+      const xstep = (W - PAD*2)/N;
+
+      function y(v){
+        return H - PAD - ( (v-min)/(max-min) ) * (H - PAD*2);
+      }
+
+      // 이평선
+      const ma20 = SMA(series, 20), ma60 = SMA(series, 60);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(138,215,255,0.85)';
+      ctx.beginPath();
+      for(let i=0;i<N;i++){
+        if(ma20[i]==null) continue;
+        const X = PAD + i*xstep + xstep*0.5;
+        const Y = y(ma20[i]);
+        i===20? ctx.moveTo(X,Y) : ctx.lineTo(X,Y);
+      }
+      ctx.stroke();
+
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(58,165,255,0.85)';
+      ctx.beginPath();
+      for(let i=0;i<N;i++){
+        if(ma60[i]==null) continue;
+        const X = PAD + i*xstep + xstep*0.5;
+        const Y = y(ma60[i]);
+        i===60? ctx.moveTo(X,Y) : ctx.lineTo(X,Y);
+      }
+      ctx.stroke();
+
+      // 캔들 (우상향 느낌 강조 위해 투명도/그라데이션)
+      for(let i=0;i<N;i++){
+        const d = series[i];
+        const cx = PAD + i*xstep + xstep*0.5;
+        const w = Math.max(4, xstep*0.5);
+        const openY = y(d.open), closeY = y(d.close);
+        const highY = y(d.high), lowY = y(d.low);
+        const up = d.close >= d.open;
+        const color = up ? getGrad('#6fd4ff','#1ea6ff', openY, closeY) : getGrad('#2f68ff','#1e4bd1', openY, closeY);
+
+        // wick
+        ctx.strokeStyle = up? 'rgba(111,212,255,0.9)':'rgba(47,104,255,0.85)';
+        ctx.lineWidth = 2; ctx.beginPath();
+        ctx.moveTo(cx, highY); ctx.lineTo(cx, lowY); ctx.stroke();
+
+        // body
+        ctx.fillStyle = color;
+        const top = Math.min(openY, closeY), h = Math.max(2, Math.abs(closeY-openY));
+        ctx.fillRect(cx - w/2, top, w, h);
+        // soft glow
+        ctx.shadowColor = up? 'rgba(111,212,255,0.35)':'rgba(47,104,255,0.35)';
+        ctx.shadowBlur = 8; ctx.fillRect(cx - w/2, top, w, h); ctx.shadowBlur=0;
+      }
+
+      function getGrad(c1,c2,y1,y2){
+        const g = ctx.createLinearGradient(0, Math.min(y1,y2), 0, Math.max(y1,y2));
+        g.addColorStop(0, c1); g.addColorStop(1, c2); return g;
+      }
+    }
+
+    resize();
+
+    // 버튼 → 실시간 차트 페이지로 이동
     document.getElementById('openSOL').addEventListener('click', function(){
       window.location.href = 'solana-chart.html?market=futures&symbol=SOLUSDT&interval=1m';
     });
