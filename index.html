@@ -7,29 +7,70 @@
   <style>
     :root{
       --bg1:#0b1e46; --bg2:#071734; --text:#ffffff;
-      --gold1:#ffe083; --gold2:#f4c64f; --gold3:#c99624; --goldShadow:rgba(0,0,0,.45);
-      --up:#6fd4ff; --down:#2f68ff; --ma1:#8ad7ff; --ma2:#3aa5ff;
+      --goldShadow:rgba(0,0,0,.45);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;background:radial-gradient(1200px 700px at 20% 15%, rgba(70,140,255,.25), transparent), linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);font-family:'Pretendard','Noto Sans KR',system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif;}
+    body{
+      margin:0;
+      background:radial-gradient(1200px 700px at 20% 15%, rgba(70,140,255,.25), transparent),
+                 linear-gradient(180deg,var(--bg1),var(--bg2));
+      color:var(--text);
+      font-family:'Pretendard','Noto Sans KR',system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif;
+      overflow:hidden;
+    }
 
-    .grid{position:fixed;inset:0;pointer-events:none;opacity:.15;background-image:linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);background-size:60px 60px;}
+    .grid{
+      position:fixed;inset:0;pointer-events:none;opacity:.15;
+      background-image:linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
+                       linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+      background-size:60px 60px;
+    }
 
-    .hero{display:flex;align-items:center;justify-content:center;min-height:100%;padding:40px 16px;position:relative;overflow:hidden;}
-    .wrap{max-width:1200px;width:100%;display:flex;align-items:center;gap:36px;z-index:2;position:relative;}
+    .hero{
+      display:flex;align-items:center;justify-content:center;
+      min-height:100%;padding:40px 16px;position:relative;
+    }
+    .wrap{
+      max-width:1200px;width:100%;
+      display:flex;align-items:center;gap:36px;
+      z-index:2;position:relative;
+    }
 
-    .logo{width:150px;height:150px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 25px 60px var(--goldShadow);}
-    .logo img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,.55));}
+    /* 로고 스타일 */
+    .logo{
+      width:150px;height:150px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 25px 60px var(--goldShadow);
+    }
+    .logo img{
+      width:100%;height:100%;object-fit:contain;
+      filter:drop-shadow(0 8px 18px rgba(0,0,0,.55));
+    }
 
-    .title{font-size:64px;line-height:1.05;font-weight:800;letter-spacing:-.5px;margin:0}
-    .subtitle{margin-top:18px;font-size:18px;color:rgba(255,255,255,.9)}
+    .title{
+      font-size:64px;line-height:1.05;font-weight:800;
+      letter-spacing:-.5px;margin:0;
+    }
+    .subtitle{
+      margin-top:18px;font-size:18px;color:rgba(255,255,255,.9);
+    }
 
     .cta{margin-top:28px}
-    .btn{appearance:none;border:none;cursor:pointer;padding:16px 26px;border-radius:999px;background:linear-gradient(90deg,#2fa5ff,#1e4bd1);color:#fff;font-weight:800;font-size:18px;box-shadow:0 10px 30px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.25);}    
+    .btn{
+      appearance:none;border:none;cursor:pointer;
+      padding:16px 26px;border-radius:999px;
+      background:linear-gradient(90deg,#2fa5ff,#1e4bd1);
+      color:#fff;font-weight:800;font-size:18px;
+      box-shadow:0 10px 30px rgba(0,0,0,.22),
+                 inset 0 1px 0 rgba(255,255,255,.25);
+    }
     .btn:hover{filter:brightness(1.05)}
 
-    canvas.bg{position:absolute;inset:0;z-index:1;opacity:.9;}
+    /* 배경용 차트 캔버스 */
+    canvas.bg{
+      position:absolute;inset:0;z-index:1;opacity:.9;
+    }
 
     @media (max-width:900px){
       .wrap{flex-direction:column;gap:18px;text-align:center}
@@ -44,8 +85,9 @@
 
   <section class="hero">
     <div class="wrap">
+      <!-- ✅ 로컬에서도 표시되도록 같은 폴더의 이미지 경로 사용 -->
       <div class="logo" title="ChartoryTech">
-        <img src="/images/chartorytech-gold.png" alt="ChartoryTech Gold Logo" />
+        <img src="./chartorytech-gold.png" alt="ChartoryTech Gold Logo" />
       </div>
 
       <div>
@@ -59,7 +101,6 @@
   </section>
 
   <script>
-    // ===== 배경 차트 =====
     const canvas = document.getElementById('bgChart');
     const ctx = canvas.getContext('2d');
 
@@ -78,7 +119,8 @@
       for(let i=0;i<n;i++){
         const drift=0.25; const noise=(Math.random()-0.5)*1.8;
         const open=price; price=Math.max(10, price+drift+noise);
-        const close=price; const high=Math.max(open,close)+Math.random()*2.5;
+        const close=price;
+        const high=Math.max(open,close)+Math.random()*2.5;
         const low=Math.min(open,close)-Math.random()*2.5;
         arr.push({open,high,low,close});
       }
@@ -110,20 +152,38 @@
 
       // MA20
       ctx.lineWidth=2; ctx.strokeStyle='rgba(138,215,255,0.8)';
-      ctx.beginPath(); for(let i=0;i<N;i++){if(ma20[i]==null)continue;const X=PAD+i*xstep+5;const Y=y(ma20[i]);i===20?ctx.moveTo(X,Y):ctx.lineTo(X,Y);} ctx.stroke();
+      ctx.beginPath();
+      for(let i=0;i<N;i++){
+        if(ma20[i]==null)continue;
+        const X=PAD+i*xstep+5; const Y=y(ma20[i]);
+        i===20?ctx.moveTo(X,Y):ctx.lineTo(X,Y);
+      }
+      ctx.stroke();
+
       // MA60
       ctx.strokeStyle='rgba(58,165,255,0.7)';
-      ctx.beginPath(); for(let i=0;i<N;i++){if(ma60[i]==null)continue;const X=PAD+i*xstep+5;const Y=y(ma60[i]);i===60?ctx.moveTo(X,Y):ctx.lineTo(X,Y);} ctx.stroke();
+      ctx.beginPath();
+      for(let i=0;i<N;i++){
+        if(ma60[i]==null)continue;
+        const X=PAD+i*xstep+5; const Y=y(ma60[i]);
+        i===60?ctx.moveTo(X,Y):ctx.lineTo(X,Y);
+      }
+      ctx.stroke();
 
       // Candles
       for(let i=0;i<N;i++){
-        const d=series[i]; const cx=PAD+i*xstep+5; const w=Math.max(4,xstep*0.5);
-        const openY=y(d.open), closeY=y(d.close), highY=y(d.high), lowY=y(d.low);
+        const d=series[i];
+        const cx=PAD+i*xstep+5; const w=Math.max(4,xstep*0.5);
+        const openY=y(d.open), closeY=y(d.close),
+              highY=y(d.high), lowY=y(d.low);
         const up=d.close>=d.open;
         const grad=ctx.createLinearGradient(0,Math.min(openY,closeY),0,Math.max(openY,closeY));
-        grad.addColorStop(0, up?'#6fd4ff':'#2f68ff'); grad.addColorStop(1, up?'#1ea6ff':'#1e4bd1');
-        ctx.strokeStyle=up?'rgba(111,212,255,0.9)':'rgba(47,104,255,0.85)'; ctx.lineWidth=2;
-        ctx.beginPath(); ctx.moveTo(cx,highY); ctx.lineTo(cx,lowY); ctx.stroke();
+        grad.addColorStop(0, up?'#6fd4ff':'#2f68ff');
+        grad.addColorStop(1, up?'#1ea6ff':'#1e4bd1');
+        ctx.strokeStyle=up?'rgba(111,212,255,0.9)':'rgba(47,104,255,0.85)';
+        ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.moveTo(cx,highY); ctx.lineTo(cx,lowY); ctx.stroke();
         ctx.fillStyle=grad;
         const top=Math.min(openY,closeY), h=Math.max(2,Math.abs(closeY-openY));
         ctx.fillRect(cx-w/2,top,w,h);
