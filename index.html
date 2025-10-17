@@ -2,27 +2,72 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chartory Tech</title>
   <style>
-    body {
-      background-color: #0a0a0a;
-      color: #f0f0f0;
-      text-align: center;
-      font-family: "Segoe UI", sans-serif;
-      margin: 0;
-    }
-    h1 {
-      margin-top: 120px;
-      font-size: 3em;
-    }
-    p {
-      font-size: 1.2em;
-      color: #bbb;
-    }
+    :root { --bg:#0d1117; --card:#161b22; --text:#e6edf3; --muted:#9da7b3; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    header { padding:56px 20px 24px; text-align:center; }
+    header h1 { font-size:40px; margin:0 0 10px; }
+    header p { color:var(--muted); margin:0; }
+    .wrap { max-width:980px; margin:32px auto; padding:0 20px; }
+    .grid { display:grid; gap:16px; grid-template-columns:repeat( auto-fit, minmax(220px, 1fr) ); }
+    .card { background:var(--card); border:1px solid #222; border-radius:14px; padding:18px; }
+    .card h3 { margin:0 0 8px; font-size:18px; }
+    .btn { display:inline-block; padding:12px 14px; border-radius:10px; background:#238636; color:#fff; text-decoration:none; font-weight:600; }
+    .btn:active { transform: translateY(1px); }
+    .row { display:flex; gap:10px; }
+    input[type=text] { flex:1; padding:12px 14px; border-radius:10px; border:1px solid #333; background:#0f141b; color:var(--text); }
+    footer { text-align:center; color:var(--muted); padding:32px 16px 48px; }
   </style>
 </head>
 <body>
-  <h1>🚀 Chartory Tech</h1>
-  <p>우리집이야 어서와~</p>
+  <header>
+    <h1>🚀 Chartory Tech</h1>
+    <p>시장 데이터를 기술로 읽는 곳 — 차토리테크에 오신 것을 환영합니다.</p>
+  </header>
+
+  <main class="wrap">
+    <div class="grid">
+      <div class="card">
+        <h3>비트코인 (BTCUSDT)</h3>
+        <p class="muted">바이낸스 1시간봉 기본 차트</p>
+        <a class="btn" href="chart.html?symbol=BINANCE:BTCUSDT&interval=60">차트 열기</a>
+      </div>
+
+      <div class="card">
+        <h3>이더리움 (ETHUSDT)</h3>
+        <p class="muted">바이낸스 1시간봉 기본 차트</p>
+        <a class="btn" href="chart.html?symbol=BINANCE:ETHUSDT&interval=60">차트 열기</a>
+      </div>
+
+      <div class="card">
+        <h3>솔라나 (SOLUSDT)</h3>
+        <p class="muted">바이낸스 1시간봉 기본 차트</p>
+        <a class="btn" href="chart.html?symbol=BINANCE:SOLUSDT&interval=60">차트 열기</a>
+      </div>
+
+      <div class="card">
+        <h3>직접 열기</h3>
+        <p class="muted">예: <code>BINANCE:ARBUSDT</code>, <code>BINANCE:OPUSDT</code></p>
+        <div class="row">
+          <input id="sym" type="text" placeholder="거래소:심볼 (예: BINANCE:BTCUSDT)">
+          <a class="btn" href="#" onclick="openSymbol()">열기</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>© <span id="y"></span> Chartory Tech — Analyze · Automate · Advance</footer>
+
+  <script>
+    document.getElementById('y').textContent = new Date().getFullYear();
+    function openSymbol(){
+      const s = document.getElementById('sym').value.trim();
+      if(!s) { alert('예: BINANCE:BTCUSDT 형태로 입력하세요.'); return; }
+      location.href = `chart.html?symbol=${encodeURIComponent(s)}&interval=60`;
+    }
+  </script>
 </body>
 </html>
