@@ -199,13 +199,8 @@
 
     resize();
 
-    // CTA 버튼 → 차트 페이지 이동 (원하면 링크만 교체)
-    document.getElementById('openSOL').addEventListener('click', () => {
-      // 예: 내부 페이지
-      // location.href = 'solana-chart.html?market=futures&symbol=SOLUSDT&interval=1m';
-      // 예: 외부 TradingView 심볼로 연결하고 싶다면 아래처럼:
-      // location.href = 'https://www.tradingview.com/chart/?symbol=BINANCE:SOLUSDT.P';
-      location.href = 'solana.html?market=futures&symbol=SOLUSDT&interval=1h';
+    document.getElementById("openChartBtn").addEventListener("click", () => {
+      window.open("/solusdt.html", "_blank", "noopener");
     });
   </script>
 </body>
