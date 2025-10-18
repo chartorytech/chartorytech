@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ChartoryTech - Realtime API Chart</title>
+  <style>
+    :root{
+      --bg:#0b1020; --grid:#1a2b4d; --text:#e8f1ff;
+      --up:#29d393; --down:#ff4d6d; --ma20:#7cc2ff; --ma60:#4d8cff;
+    }
+    html,body{height:100%;margin:0}
+    body{background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif}
+    .topbar{
+      display:flex;align-items:center;gap:14px; padding:10px 14px;
+      border-bottom:1px solid #13203a; background:#0d1428; position:sticky; top:0; z-index:2;
+    }
+    .pair{font-weight:800}
+    .pill{padding:6px 10px;border-radius:999px;background:#12254a;color:#bcd8ff;font-size:12px}
+    #chart{height:calc(100vh - 54px)}
+    .note{position:absolute;right:12px;top:58px;color:#98b6ff;font-size:12px;opacity:.8}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="pair" id="pairLabel"></div>
+    <span class="pill" id="marketPill"></span>
+    <span class="pill" id="intervalPill"></span>
+    <span class="pill">Data: Binance</span>
+  </div>
+  <div id="chart"></div>
+  <div class="note">ESC 또는 ⌘/Ctrl+← 로 뒤로가기</div>
+
+  <!-- Lightweight Charts (v4) -->
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  <script>
+    // ====== Query Params ======
+    const p = new URLSearchParams(location.search);
+    const market   = (p.get('market')   || 'futures').toLowerCase(); // 'spot' | 'futures'
+    const symbol   = (p.get('symbol')   || 'SOLUSDT').toUpperCase();
+    const interval = (p.get('interval') || '1m').toLowerCase();
+
+    // UI 표시
+    pairLabel.textContent = symbol;
+    marketPill.textContent = market;
+    intervalPill.textContent = interval;
+
+    // ====== Binance Endpoints ======
+    // Spot   REST: https://api.binance.com/api/v3/klines
+    // Spot   WS  : wss://stream.binance.com:9443/ws/<symbolLower>@kline_<interval>
+    // Futures REST: https://fapi.binance.com/fapi/v1/klines
+    // Futures WS  : wss://fstream.binance.com/ws/<symbolLower>@kline_<interval>
+    const REST = market === 'spot'
+      ? 'https://api.binance.com/api/v3/klines'
+      : 'https://fapi.binance.com/fapi/v1/klines';
+    const WSS = market === 'spot'
+      ? 'wss://stream.binance.com:9443/ws'
+      : 'wss://fstream.binance.com/ws';
+
+    // ====== Helpers ======
+    const toSec = ms => Math.floor(ms/1000);
+    const kToBar = k => ({
+      time: toSec(k[0]),           // open time (ms) -> sec
+      open:  +k[1],
+      high:  +k[2],
+      low:   +k[3],
+      close: +k[4],
+      volume:+k[5],
+    });
+
+    // SMA 계산
+    function SMA(src, len){
+      const out=[]; let sum=0; const q=[];
+      for (let i=0;i<src.length;i++){
+        const v = src[i].close;
+        q.push(v); sum+=v;
+        if (q.length>len) sum-=q.shift();
+        out.push(q.length===len ? +(sum/len).toFixed(6) : null);
+      }
+      return out;
+    }
+
+    // ====== Chart Setup ======
+    const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+      layout: { background: { type: 'solid', color: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() },
+                textColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() },
+      grid: {
+        vertLines: { color: getComputedStyle(document.documentElement).getPropertyValue('--grid').trim(), visible:true},
+        horzLines: { color: getComputedStyle(document.documentElement).getPropertyValue('--grid').trim(), visible:true},
+      },
+      rightPriceScale: { borderVisible:false },
+      timeScale: { borderVisible:false, rightOffset:6, barSpacing:10, fixLeftEdge:false },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+      localization: { priceFormatter: v => Number(v).toFixed(4) },
+      autoSize: true,
+    });
+
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: getComputedStyle(document.documentElement).getPropertyValue('--up').trim(),
+      downColor: getComputedStyle(document.documentElement).getPropertyValue('--down').trim(),
+      borderUpColor: getComputedStyle(document.documentElement).getPropertyValue('--up').trim(),
+      borderDownColor: getComputedStyle(document.documentElement).getPropertyValue('--down').trim(),
+      wickUpColor: getComputedStyle(document.documentElement).getPropertyValue('--up').trim(),
+      wickDownColor: getComputedStyle(document.documentElement).getPropertyValue('--down').trim(),
+    });
+
+    const ma20 = chart.addLineSeries({ color: getComputedStyle(document.documentElement).getPropertyValue('--ma20')?.trim() || '#7cc2ff', lineWidth:2 });
+    const ma60 = chart.addLineSeries({ color: getComputedStyle(document.documentElement).getPropertyValue('--ma60')?.trim() || '#4d8cff', lineWidth:2 });
+
+    // ====== Load History ======
+    async function loadHistory() {
+      const url = `${REST}?symbol=${symbol}&interval=${interval}&limit=1000`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`REST error ${res.status}`);
+      const raw = await res.json();              // array of klines
+      const bars = raw.map(kToBar);
+      candleSeries.setData(bars);
+
+      // MA
+      const c = bars.map(b => ({close:b.close}));
+      const s20 = SMA(c, 20).map((v,i)=> v? {time: bars[i].time, value:v} : null).filter(Boolean);
+      const s60 = SMA(c, 60).map((v,i)=> v? {time: bars[i].time, value:v} : null).filter(Boolean);
+      ma20.setData(s20);
+      ma60.setData(s60);
+
+      chart.timeScale().fitContent();
+      return bars.at(-1)?.time ?? null;
+    }
+
+    // ====== Live WebSocket ======
+    let ws, lastBarTime = null, reconnectTimer = null;
+
+    function connectWS(){
+      const stream = `${symbol.toLowerCase()}@kline_${interval}`;
+      ws = new WebSocket(`${WSS}/${stream}`);
+      ws.onopen = () => { /* console.log('WS open'); */ };
+
+      ws.onmessage = ev => {
+        const d = JSON.parse(ev.data);
+        if (!d.k) return;
+        const k = d.k; // kline payload
+        const bar = {
+          time: Math.floor(k.t/1000),
+          open: +k.o,
+          high: +k.h,
+          low:  +k.l,
+          close:+k.c,
+        };
+        // 실시간 업데이트
+        candleSeries.update(bar);
+
+        // MA 업데이트(가벼운 방식: 마지막 포인트만 보정)
+        lastBarTime = bar.time;
+        // 간단 SMA rolling 계산 대신: 기존 시리즈를 읽을 수 없으니, 주기적으로 리로드(가벼운 횟수)하거나 skip
+        // 여기서는 30초마다 이평선 보정
+      };
+
+      ws.onclose = () => scheduleReconnect();
+      ws.onerror = () => { try{ws.close();}catch(e){} };
+    }
+
+    function scheduleReconnect(){
+      if (reconnectTimer) return;
+      reconnectTimer = setTimeout(async () => {
+        reconnectTimer = null;
+        connectWS();
+      }, 2000);
+    }
+
+    // 주기적으로 MA 보정(30초) – 정확도가 중요하면 짧게 조절
+    setInterval(async () => {
+      try{
+        const last = await loadSlice(120); // 최근 120개만
+        if (last && last.length){
+          const c = last.map(b=>({close:b.close}));
+          const s20 = SMA(c,20).map((v,i)=> v? {time:last[i].time, value:v}:null).filter(Boolean);
+          const s60 = SMA(c,60).map((v,i)=> v? {time:last[i].time, value:v}:null).filter(Boolean);
+          ma20.setData(s20);
+          ma60.setData(s60);
+        }
+      }catch(e){}
+    }, 30000);
+
+    async function loadSlice(limit){
+      const url = `${REST}?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+      const res = await fetch(url);
+      const raw = await res.json();
+      return raw.map(kToBar);
+    }
+
+    // ====== Boot ======
+    (async () => {
+      try{
+        await loadHistory();
+        connectWS();
+      }catch(err){
+        alert('데이터 로딩 실패: ' + err.message);
+        console.error(err);
+      }
+    })();
+
+    // UX: ESC/뒤로가기 단축키
+    addEventListener('keydown',(e)=>{
+      if (e.key === 'Escape' || (e.ctrlKey && e.key === '[')) history.back();
+    });
+  </script>
+</body>
+</html>
