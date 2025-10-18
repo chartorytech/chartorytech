@@ -1,211 +1,119 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ChartoryTech</title>
-  <meta name="description" content="ChartoryTech - 실시간 데이터 기반 트레이딩 차트 플랫폼" />
+  <link rel="icon" href="./chartorytech-gold.svg" type="image/svg+xml" />
   <style>
-    :root {
-      --bg1: #0b1e46; --bg2: #071734; --text: #ffffff;
-      --gold1: #ffe083; --gold2: #f4c64f; --gold3: #b88421;
-      --ma1: rgba(138,215,255,0.8); --ma2: rgba(58,165,255,0.7);
+    body {
+      margin: 0;
+      height: 100vh;
+      background: radial-gradient(circle at 20% 20%, #0b2545, #011627);
+      font-family: 'Segoe UI', sans-serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0}
-    body{
-      background:
-        radial-gradient(1200px 700px at 20% 15%, rgba(70,140,255,.25), transparent),
-        linear-gradient(180deg,var(--bg1),var(--bg2));
-      color:var(--text);
-      font-family:'Pretendard','Noto Sans KR',system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif;
-      overflow:hidden;
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1rem;
     }
-    .grid{
-      position:fixed;inset:0;pointer-events:none;opacity:.15;
-      background-image:
-        linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
-      background-size:60px 60px;
+
+    .logo img {
+      width: 64px;
+      height: 64px;
     }
-    .hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 16px}
-    .wrap{position:relative;z-index:2;max-width:1200px;width:100%;display:flex;gap:36px;align-items:center}
-    .brand{display:flex;gap:28px;align-items:center}
-    .title{font-size:64px;font-weight:800;letter-spacing:-.5px;margin:0}
-    .subtitle{margin-top:12px;font-size:18px;color:rgba(255,255,255,.9)}
-    .cta{margin-top:24px}
-    .btn{
-      appearance:none;border:none;cursor:pointer;border-radius:999px;
-      padding:16px 26px;font-weight:800;font-size:18px;color:#000;
-      background:linear-gradient(90deg,var(--gold1),var(--gold3));
-      box-shadow:0 10px 30px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.35);
-      transition:transform .2s ease, filter .2s ease;
+
+    .logo-text {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f5c84c;
     }
-    .btn:hover{transform:translateY(-1px);filter:brightness(1.06)}
-    canvas.bg{position:absolute;inset:0;z-index:1;opacity:.9}
-    @media (max-width:900px){
-      .wrap{flex-direction:column;text-align:center}
-      .title{font-size:42px}
+
+    h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      margin: 0.5rem 0;
     }
-    /* 안전 장치: 어떤 환경에서도 로고에 흰 배경이 깔리지 않게 */
-    .logo{background:none !important}
-    .logo svg{display:block;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5))}
+
+    p {
+      color: #ccc;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    button {
+      font-size: 1.1rem;
+      font-weight: bold;
+      background: linear-gradient(90deg, #f5c84c, #b98922);
+      border: none;
+      padding: 0.9rem 2.5rem;
+      border-radius: 40px;
+      color: #1a1a1a;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      background: linear-gradient(90deg, #ffe281, #c59b37);
+    }
+
+    /* 배경 차트 느낌 (캔들 그래픽 이미지 대신 CSS로 표현) */
+    .bg-lines {
+      position: absolute;
+      inset: 0;
+      opacity: 0.15;
+      background: repeating-linear-gradient(
+        to right,
+        #1b3b5f 0px,
+        #1b3b5f 2px,
+        transparent 2px,
+        transparent 80px
+      ),
+      repeating-linear-gradient(
+        to top,
+        #1b3b5f 0px,
+        #1b3b5f 2px,
+        transparent 2px,
+        transparent 60px
+      );
+      z-index: 0;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+    }
   </style>
 </head>
 <body>
-  <div class="grid"></div>
-  <canvas id="bgChart" class="bg" aria-hidden></canvas>
+  <div class="bg-lines"></div>
 
-  <section class="hero">
-    <div class="wrap">
-      <!-- 인라인 SVG 로고 + 워드마크 (완전 투명 배경) -->
-      <div class="logo" aria-label="Chartory Tech Logo">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" width="360" role="img" aria-label="Chartory Tech Gold Logo">
-          <defs>
-            <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%"  stop-color="#FFF4BC"/>
-              <stop offset="28%" stop-color="#FFE082"/>
-              <stop offset="52%" stop-color="#F4C64F"/>
-              <stop offset="76%" stop-color="#D4A733"/>
-              <stop offset="100%" stop-color="#B88421"/>
-            </linearGradient>
-            <linearGradient id="goldRev" x1="1" y1="0" x2="0" y2="1">
-              <stop offset="0%"  stop-color="#FFF8D2"/>
-              <stop offset="35%" stop-color="#FFE693"/>
-              <stop offset="70%" stop-color="#E9BF4F"/>
-              <stop offset="100%" stop-color="#B88421"/>
-            </linearGradient>
-            <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          <!-- 심볼 -->
-          <g filter="url(#softGlow)" transform="translate(20,40)">
-            <circle cx="180" cy="180" r="170" fill="none" stroke="url(#gold)" stroke-width="28" stroke-linecap="round"/>
-            <path d="M290 118c-24-24-63-40-110-40c-88 0-140 58-140 110s52 110 140 110"
-                  fill="none" stroke="url(#goldRev)" stroke-width="22" stroke-linecap="round"/>
-            <rect x="160" y="205" width="18" height="46" rx="5" fill="url(#gold)"/>
-            <rect x="186" y="172" width="18" height="79" rx="5" fill="url(#gold)"/>
-            <rect x="212" y="128" width="18" height="123" rx="5" fill="url(#gold)"/>
-            <rect x="246" y="96" width="22" height="168" rx="7" fill="url(#gold)"/>
-            <rect x="212" y="96" width="56" height="22" rx="7" fill="url(#goldRev)"/>
-          </g>
-          <!-- 워드마크 -->
-          <g transform="translate(380,140)" font-family="Segoe UI, Noto Sans, Arial, sans-serif" font-weight="800" fill="url(#gold)" filter="url(#softGlow)">
-            <text x="0" y="120" font-size="96">Chartory</text>
-            <text x="0" y="210" font-size="96">Tech</text>
-          </g>
-        </svg>
-      </div>
-
-      <div>
-        <h1 class="title">ChartoryTech</h1>
-        <p class="subtitle">실시간 데이터 · 정확한 트레이딩 인사이트</p>
-        <div class="cta">
-          <button id="openSOL" class="btn">SOLUSDT FUTURES OPEN</button>
-        </div>
-      </div>
+  <div class="content">
+    <div class="logo">
+      <img src="./chartorytech-gold.svg" alt="ChartoryTech 로고" />
+      <div class="logo-text">Chartory Tech</div>
     </div>
-  </section>
+
+    <h1>ChartoryTech</h1>
+    <p>실시간 데이터, 정확한 트레이딩 인사이트</p>
+
+    <button id="openChartBtn">SOLUSDT FUTURES OPEN</button>
+  </div>
 
   <script>
-    // ===== 배경 차트 (우상향 캔들 + MA 라인) =====
-    const canvas = document.getElementById('bgChart');
-    const ctx = canvas.getContext('2d');
-
-    function resize(){
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = innerWidth * dpr;
-      canvas.height = innerHeight * dpr;
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      draw();
-    }
-    window.addEventListener('resize', resize);
-
-    function genSeries(n){
-      let price = 100; const arr=[];
-      for(let i=0;i<n;i++){
-        const drift = 0.25;                     // 우상향 기울기
-        const noise = (Math.random()-0.5)*1.8;  // 랜덤 노이즈
-        const open = price;
-        price = Math.max(10, price + drift + noise);
-        const close = price;
-        const high = Math.max(open,close) + Math.random()*2.5;
-        const low  = Math.min(open,close) - Math.random()*2.5;
-        arr.push({open,high,low,close});
-      }
-      return arr;
-    }
-    function SMA(src, len){
-      const out=[]; let sum=0; const q=[];
-      for(let i=0;i<src.length;i++){
-        q.push(src[i].close); sum+=src[i].close;
-        if(q.length>len) sum-=q.shift();
-        out.push(q.length===len? sum/len : null);
-      }
-      return out;
-    }
-
-    function draw(){
-      const W = canvas.width, H = canvas.height;
-      ctx.clearRect(0,0,W,H);
-      const PAD = 60, N = Math.floor(W/18);
-      const series = genSeries(N);
-      const vals = series.flatMap(o=>[o.low,o.high]);
-      const min = Math.min(...vals), max = Math.max(...vals);
-      const xstep = (W-PAD*2)/N;
-      const y = v => H - PAD - ((v-min)/(max-min))*(H-PAD*2);
-
-      // MA20 & MA60
-      const ma20 = SMA(series,20), ma60 = SMA(series,60);
-      ctx.lineWidth = 2;
-
-      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--ma1');
-      ctx.beginPath();
-      for(let i=0;i<N;i++){ if(ma20[i]==null) continue;
-        const X = PAD + i*xstep + 5, Y = y(ma20[i]);
-        (i===20?ctx.moveTo:ctx.lineTo).call(ctx, X, Y);
-      } ctx.stroke();
-
-      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--ma2');
-      ctx.beginPath();
-      for(let i=0;i<N;i++){ if(ma60[i]==null) continue;
-        const X = PAD + i*xstep + 5, Y = y(ma60[i]);
-        (i===60?ctx.moveTo:ctx.lineTo).call(ctx, X, Y);
-      } ctx.stroke();
-
-      // Candles
-      for(let i=0;i<N;i++){
-        const d = series[i];
-        const cx = PAD + i*xstep + 5;
-        const w = Math.max(4, xstep*0.5);
-        const openY = y(d.open), closeY = y(d.close), highY = y(d.high), lowY = y(d.low);
-        const up = d.close >= d.open;
-
-        // Wick
-        ctx.strokeStyle = up ? 'rgba(111,212,255,0.9)' : 'rgba(47,104,255,0.85)';
-        ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx,highY); ctx.lineTo(cx,lowY); ctx.stroke();
-
-        // Body
-        const grad = ctx.createLinearGradient(0, Math.min(openY,closeY), 0, Math.max(openY,closeY));
-        grad.addColorStop(0, up ? '#6fd4ff' : '#2f68ff');
-        grad.addColorStop(1, up ? '#1ea6ff' : '#1e4bd1');
-        ctx.fillStyle = grad;
-        const top = Math.min(openY,closeY), h = Math.max(2, Math.abs(closeY-openY));
-        ctx.fillRect(cx - w/2, top, w, h);
-      }
-    }
-
-    resize();
-
-    // CTA 버튼 → 차트 페이지 이동 (원하면 링크만 교체)
-    document.getElementById('openSOL').addEventListener('click', () => {
-      // 예: 내부 페이지
-      // location.href = 'solana-chart.html?market=futures&symbol=SOLUSDT&interval=1m';
-      // 예: 외부 TradingView 심볼로 연결하고 싶다면 아래처럼:
-      // location.href = 'https://www.tradingview.com/chart/?symbol=BINANCE:SOLUSDT.P';
-      location.href = 'solana.html?market=futures&symbol=SOLUSDT&interval=1h';
+    document.getElementById("openChartBtn").addEventListener("click", () => {
+      window.open("/solusdt.html", "_blank", "noopener");
     });
   </script>
 </body>
