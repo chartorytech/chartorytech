@@ -1,218 +1,58 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ChartoryTech - Realtime API Chart</title>
+  <meta charset="UTF-8">
+  <title>SOLUSDT Futures Chart</title>
+  <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
   <style>
-    :root{
-      --bg:#0b1020; --grid:#1a2b4d; --text:#e8f1ff;
-      --up:#29d393; --down:#ff4d6d; --ma20:#7cc2ff; --ma60:#4d8cff;
-      --warn:#ffb020;
-    }
-    html,body{height:100%;margin:0}
-    body{background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif}
-    .topbar{
-      display:flex;align-items:center;gap:14px;padding:10px 14px;
-      border-bottom:1px solid #13203a;background:#0d1428;position:sticky;top:0;z-index:3;
-    }
-    .pair{font-weight:800}
-    .pill{padding:6px 10px;border-radius:999px;background:#12254a;color:#bcd8ff;font-size:12px}
-    #chart{height:calc(100vh - 54px)}
-    .status{
-      position:absolute;left:12px;top:58px;z-index:4;font-size:12px;
-      background:#0d1428;border:1px solid #1a2b4d;border-radius:8px;padding:8px 10px;color:#bcd8ff
-    }
-    .status b{color:#fff}
-    .status .warn{color:var(--warn)}
+    body { margin: 0; background: #0d1b2a; }
+    #chart { width: 100vw; height: 100vh; }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="pair" id="pairLabel"></div>
-    <span class="pill" id="marketPill"></span>
-    <span class="pill" id="intervalPill"></span>
-    <span class="pill">Data: Binance</span>
-  </div>
   <div id="chart"></div>
-  <div class="status" id="status">⏳ 초기화 중…</div>
-
-  <!-- Lightweight Charts -->
-  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
   <script>
-  (function(){
-    // ===== Query =====
-    const qp = new URLSearchParams(location.search);
-    let market   = (qp.get('market')   || 'futures').toLowerCase(); // futures|spot
-    const symbol = (qp.get('symbol')   || 'SOLUSDT').toUpperCase();
-    const interval= (qp.get('interval')|| '1m').toLowerCase();
-    pairLabel.textContent = symbol; marketPill.textContent = market; intervalPill.textContent = interval;
-
-    // ===== Endpoints =====
-    const RESTs = {
-      futures: 'https://fapi.binance.com/fapi/v1/klines',
-      spot:    'https://api.binance.com/api/v3/klines'
-    };
-    const WSSs = {
-      futures: 'wss://fstream.binance.com/ws',
-      spot:    'wss://stream.binance.com:9443/ws'
-    };
-    // 헤더 불필요 CORS 프록시 (읽기 전용)
-    const PROXY = 'https://cors.isomorphic-git.org/';
-
-    // ===== Helpers =====
-    const $status = document.getElementById('status');
-    const note = (msg, warn=false) => $status.innerHTML = (warn? '⚠️ ' : 'ℹ️ ') + msg;
-    const toSec = ms => Math.floor(ms/1000);
-    const kToBar = k => ({ time: toSec(k[0]), open:+k[1], high:+k[2], low:+k[3], close:+k[4], volume:+k[5] });
-
-    function SMA(src,len){
-      const out=[]; let sum=0; const q=[];
-      for(let i=0;i<src.length;i++){
-        const v = src[i].close; q.push(v); sum+=v;
-        if(q.length>len) sum-=q.shift();
-        out.push(q.length===len? +(sum/len).toFixed(6):null);
-      }
-      return out;
-    }
-
-    // ===== Chart =====
     const chart = LightweightCharts.createChart(document.getElementById('chart'), {
-      layout: { background: { type:'solid', color:getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() },
-                textColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() },
-      grid: { vertLines:{ color:getComputedStyle(document.documentElement).getPropertyValue('--grid').trim() },
-              horzLines:{ color:getComputedStyle(document.documentElement).getPropertyValue('--grid').trim() } },
-      rightPriceScale: { borderVisible:false },
-      timeScale: { borderVisible:false, rightOffset:6, barSpacing:10 },
-      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-      autoSize: true,
+      layout: { background: { color: '#0d1b2a' }, textColor: '#fff' },
+      grid: { vertLines: { color: '#1b263b' }, horzLines: { color: '#1b263b' } },
     });
-    const candle = chart.addCandlestickSeries({
-      upColor:getComputedStyle(document.documentElement).getPropertyValue('--up').trim(),
-      downColor:getComputedStyle(document.documentElement).getPropertyValue('--down').trim(),
-      borderUpColor:getComputedStyle(document.documentElement).getPropertyValue('--up').trim(),
-      borderDownColor:getComputedStyle(document.documentElement).getPropertyValue('--down').trim(),
-      wickUpColor:getComputedStyle(document.documentElement).getPropertyValue('--up').trim(),
-      wickDownColor:getComputedStyle(document.documentElement).getPropertyValue('--down').trim(),
+
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: '#4fff9e',
+      borderUpColor: '#4fff9e',
+      wickUpColor: '#4fff9e',
+      downColor: '#ff4976',
+      borderDownColor: '#ff4976',
+      wickDownColor: '#ff4976',
     });
-    const sMA20 = chart.addLineSeries({ color:getComputedStyle(document.documentElement).getPropertyValue('--ma20').trim(), lineWidth:2 });
-    const sMA60 = chart.addLineSeries({ color:getComputedStyle(document.documentElement).getPropertyValue('--ma60').trim(), lineWidth:2 });
 
-    // ===== Data load with fallbacks =====
-    async function fetchKlines(baseUrl){
-      const url = `${baseUrl}?symbol=${symbol}&interval=${interval}&limit=1000`;
-      const res = await fetch(url);
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()).map(kToBar);
-    }
-    async function fetchKlinesProxy(baseUrl){
-      const url = `${PROXY}${baseUrl}?symbol=${symbol}&interval=${interval}&limit=1000`;
-      const res = await fetch(url);
-      if(!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
-      return (await res.json()).map(kToBar);
-    }
+    // 초기 데이터 로드 (최근 500개의 1분봉)
+    fetch('https://fapi.binance.com/fapi/v1/klines?symbol=SOLUSDT&interval=1m&limit=500')
+      .then(r => r.json())
+      .then(data => {
+        const candles = data.map(k => ({
+          time: k[0] / 1000,
+          open: parseFloat(k[1]),
+          high: parseFloat(k[2]),
+          low: parseFloat(k[3]),
+          close: parseFloat(k[4]),
+        }));
+        candleSeries.setData(candles);
+      });
 
-    async function loadHistoryRobust(){
-      // 1) Futures
-      try{
-        note(`<b>${symbol}</b> ${market} 히스토리 불러오는 중…`);
-        const bars = await fetchKlines(RESTs[market]);
-        candle.setData(bars);
-        applyMAs(bars);
-        chart.timeScale().fitContent();
-        note(`<b>${symbol}</b> ${market} 연결 성공`);
-        return true;
-      }catch(e1){
-        console.warn('Futures/Spot 1차 실패:', e1);
-        // 2) Spot로 폴백(마켓 스위치)
-        if(market === 'futures'){
-          market = 'spot'; marketPill.textContent = 'spot';
-          try{
-            note(`<span class="warn">futures 실패 → spot으로 폴백 중…</span>`);
-            const bars = await fetchKlines(RESTs[market]);
-            candle.setData(bars); applyMAs(bars); chart.timeScale().fitContent();
-            note(`<b>${symbol}</b> spot 연결 성공`);
-            return true;
-          }catch(e2){
-            console.warn('Spot 2차 실패:', e2);
-          }
-        }
-        // 3) Proxy 폴백
-        try{
-          note(`<span class="warn">직접 연결 실패 → CORS 프록시 사용 중…</span>`);
-          const bars = await fetchKlinesProxy(RESTs[market]);
-          candle.setData(bars); applyMAs(bars); chart.timeScale().fitContent();
-          note(`<b>${symbol}</b> (${market}) 프록시로 연결`);
-          // 프록시 모드에서는 WS 대신 10초 폴링
-          startPolling();
-          return false; // ws 비활성
-        }catch(e3){
-          console.error('Proxy 3차 실패:', e3);
-          note(`<span class="warn">데이터 로딩 실패: ${e3.message}</span>`, true);
-          throw e3;
-        }
-      }
-    }
-
-    function applyMAs(bars){
-      const c = bars.map(b=>({close:b.close}));
-      const m20 = SMA(c,20).map((v,i)=> v? {time:bars[i].time, value:v} : null).filter(Boolean);
-      const m60 = SMA(c,60).map((v,i)=> v? {time:bars[i].time, value:v} : null).filter(Boolean);
-      sMA20.setData(m20); sMA60.setData(m60);
-    }
-
-    // ===== WS / Polling =====
-    let ws=null, pollTimer=null;
-    function connectWS(){
-      const stream = `${symbol.toLowerCase()}@kline_${interval}`;
-      const url = `${WSSs[market]}/${stream}`;
-      try{
-        ws = new WebSocket(url);
-      }catch(e){
-        console.warn('WS 생성 실패, 폴링으로 대체', e);
-        startPolling();
-        return;
-      }
-      ws.onopen = ()=> note(`WS 연결: ${market}`);
-      ws.onmessage = ev => {
-        const d = JSON.parse(ev.data); if(!d.k) return;
-        const k=d.k;
-        candle.update({ time: Math.floor(k.t/1000), open:+k.o, high:+k.h, low:+k.l, close:+k.c });
-      };
-      ws.onerror = ()=> { try{ws.close();}catch(e){} };
-      ws.onclose = ()=> { // 재시도
-        note(`<span class="warn">WS 끊김 → 재연결 시도</span>`);
-        setTimeout(connectWS, 2000);
-      };
-    }
-
-    function startPolling(){
-      if(pollTimer) return;
-      pollTimer = setInterval(async ()=>{
-        try{
-          const bars = await fetchKlinesProxy(RESTs[market]);
-          if(bars?.length){
-            candle.setData(bars);
-            applyMAs(bars);
-          }
-        }catch(e){ /* 무시하고 다음 사이클 */ }
-      }, 10000);
-    }
-
-    // ===== Boot =====
-    (async ()=>{
-      try{
-        const wsOK = await loadHistoryRobust();
-        if(wsOK) connectWS(); // 프록시 모드면 폴링이 이미 시작됨
-      }catch(e){
-        console.error(e);
-      }
-    })();
-
-    // UX: ESC/뒤로가기
-    addEventListener('keydown',(e)=>{ if(e.key==='Escape'||(e.ctrlKey&&e.key==='[')) history.back(); });
-
-  })();
+    // 실시간 업데이트 (WebSocket)
+    const ws = new WebSocket('wss://fstream.binance.com/ws/solusdt@kline_1m');
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      const k = msg.k;
+      candleSeries.update({
+        time: k.t / 1000,
+        open: parseFloat(k.o),
+        high: parseFloat(k.h),
+        low: parseFloat(k.l),
+        close: parseFloat(k.c),
+      });
+    };
   </script>
 </body>
 </html>
