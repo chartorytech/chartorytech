@@ -50,6 +50,7 @@
     .logo {
       width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;
       background: none !important;
+      display: inline-block;
     }
     .logo img {
       width: 100%; height: 100%; object-fit: contain;
@@ -58,7 +59,9 @@
       mix-blend-mode: normal !important;
       border: none !important;
       box-shadow: none !important;
-      
+      background: transparent !important;
+      mix-blend-mode: multiply !important;
+      image-rendering: crisp-edges;
 
     }
 
@@ -100,6 +103,8 @@
   <div class="grid"></div>
   <canvas id="bgChart" class="bg"></canvas>
 
+  background-color: #001a44; /* 네이비 배경 예시 */
+  
   <section class="hero">
     <div class="wrap">
       <!-- ✅ 로고 이미지 (같은 폴더에 chartorytech-gold.png 넣기) -->
