@@ -1,20 +1,52 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>SOLUSDT Futures Chart</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOLUSDT Futures Chart | ChartoryTech</title>
   <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
   <style>
-    body { margin: 0; background: #0d1b2a; }
-    #chart { width: 100vw; height: 100vh; }
+    body {
+      margin: 0;
+      height: 100vh;
+      background-color: #0b2545;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      text-align: center;
+      padding: 10px;
+      background: #13293d;
+      border-bottom: 1px solid #1b3b5f;
+    }
+    #chart {
+      flex-grow: 1;
+    }
   </style>
 </head>
 <body>
+  <header>
+    <h2>SOLUSDT Futures (Binance Real-Time)</h2>
+    <p style="color:#9fb3c8; font-size:0.9rem;">실시간 Binance 선물 데이터 스트리밍</p>
+  </header>
+
   <div id="chart"></div>
+
   <script>
+    // 차트 생성
     const chart = LightweightCharts.createChart(document.getElementById('chart'), {
-      layout: { background: { color: '#0d1b2a' }, textColor: '#fff' },
-      grid: { vertLines: { color: '#1b263b' }, horzLines: { color: '#1b263b' } },
+      layout: {
+        background: { color: '#0b2545' },
+        textColor: '#ffffff',
+      },
+      grid: {
+        vertLines: { color: '#1b3b5f' },
+        horzLines: { color: '#1b3b5f' },
+      },
+      timeScale: { borderColor: '#1b3b5f' },
+      rightPriceScale: { borderColor: '#1b3b5f' },
     });
 
     const candleSeries = chart.addCandlestickSeries({
@@ -26,9 +58,9 @@
       wickDownColor: '#ff4976',
     });
 
-    // 초기 데이터 로드 (최근 500개의 1분봉)
+    // 최근 500개 캔들 불러오기
     fetch('https://fapi.binance.com/fapi/v1/klines?symbol=SOLUSDT&interval=1m&limit=500')
-      .then(r => r.json())
+      .then(res => res.json())
       .then(data => {
         const candles = data.map(k => ({
           time: k[0] / 1000,
@@ -38,11 +70,13 @@
           close: parseFloat(k[4]),
         }));
         candleSeries.setData(candles);
-      });
+      })
+      .catch(err => console.error("초기 데이터 로드 실패:", err));
 
-    // 실시간 업데이트 (WebSocket)
-    const ws = new WebSocket('wss://fstream.binance.com/ws/solusdt@kline_1m');
-    ws.onmessage = (event) => {
+    // WebSocket 실시간 업데이트
+    const socket = new WebSocket('wss://fstream.binance.com/ws/solusdt@kline_1m');
+
+    socket.onmessage = event => {
       const msg = JSON.parse(event.data);
       const k = msg.k;
       candleSeries.update({
@@ -53,6 +87,8 @@
         close: parseFloat(k.c),
       });
     };
+
+    socket.onclose = () => console.log("WebSocket 연결 종료됨");
   </script>
 </body>
 </html>
