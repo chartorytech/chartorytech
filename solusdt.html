@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>SOLUSDT Futures Chart</title>
+  <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    body { margin: 0; background: #0d1b2a; }
+    #chart { width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="chart"></div>
+  <script>
+    const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+      layout: { background: { color: '#0d1b2a' }, textColor: '#fff' },
+      grid: { vertLines: { color: '#1b263b' }, horzLines: { color: '#1b263b' } },
+    });
+
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: '#4fff9e',
+      borderUpColor: '#4fff9e',
+      wickUpColor: '#4fff9e',
+      downColor: '#ff4976',
+      borderDownColor: '#ff4976',
+      wickDownColor: '#ff4976',
+    });
+
+    // 초기 데이터 로드 (최근 500개의 1분봉)
+    fetch('https://fapi.binance.com/fapi/v1/klines?symbol=SOLUSDT&interval=1m&limit=500')
+      .then(r => r.json())
+      .then(data => {
+        const candles = data.map(k => ({
+          time: k[0] / 1000,
+          open: parseFloat(k[1]),
+          high: parseFloat(k[2]),
+          low: parseFloat(k[3]),
+          close: parseFloat(k[4]),
+        }));
+        candleSeries.setData(candles);
+      });
+
+    // 실시간 업데이트 (WebSocket)
+    const ws = new WebSocket('wss://fstream.binance.com/ws/solusdt@kline_1m');
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      const k = msg.k;
+      candleSeries.update({
+        time: k.t / 1000,
+        open: parseFloat(k.o),
+        high: parseFloat(k.h),
+        low: parseFloat(k.l),
+        close: parseFloat(k.c),
+      });
+    };
+  </script>
+</body>
+</html>
