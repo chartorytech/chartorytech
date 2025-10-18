@@ -4,70 +4,101 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ChartoryTech</title>
+  <meta name="description" content="ChartoryTech - 실시간 데이터 기반 트레이딩 차트 플랫폼" />
   <style>
-    :root{
-      --bg1:#0b1e46; --bg2:#071734; --text:#ffffff;
-      --gold1:#ffe083; --gold2:#f4c64f; --gold3:#c99624; --goldShadow:rgba(0,0,0,.45);
-      --up:#6fd4ff; --down:#2f68ff; --ma1:#8ad7ff; --ma2:#3aa5ff;
+    :root {
+      --bg1: #0b1e46;
+      --bg2: #071734;
+      --text: #ffffff;
+      --gold1: #ffe083;
+      --gold2: #f4c64f;
+      --gold3: #c99624;
+      --up: #6fd4ff;
+      --down: #2f68ff;
+      --ma1: rgba(138,215,255,0.8);
+      --ma2: rgba(58,165,255,0.7);
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;background:radial-gradient(1200px 700px at 20% 15%, rgba(70,140,255,.25), transparent), linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);font-family:'Pretendard','Noto Sans KR',system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif;}
 
-    .grid{position:fixed;inset:0;pointer-events:none;opacity:.15;background-image:linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);background-size:60px 60px;}
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(1200px 700px at 20% 15%, rgba(70,140,255,.25), transparent),
+                  linear-gradient(180deg, var(--bg1), var(--bg2));
+      color: var(--text);
+      font-family: "Pretendard","Noto Sans KR",system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,sans-serif;
+      overflow: hidden;
+    }
 
-    .hero{display:flex;align-items:center;justify-content:center;min-height:100%;padding:40px 16px;position:relative;overflow:hidden;}
-    .wrap{max-width:1200px;width:100%;display:flex;align-items:center;gap:36px;z-index:2;position:relative;}
+    .grid {
+      position: fixed; inset: 0; pointer-events: none; opacity: 0.15;
+      background-image: linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
 
-    .logo{width:150px;height:150px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 25px 60px var(--goldShadow);}
-    .logo img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,.55));}
+    .hero {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 40px 16px; position: relative;
+    }
 
-    .title{font-size:64px;line-height:1.05;font-weight:800;letter-spacing:-.5px;margin:0}
-    .subtitle{margin-top:18px;font-size:18px;color:rgba(255,255,255,.9)}
+    .wrap {
+      max-width: 1200px; width: 100%;
+      display: flex; align-items: center; gap: 36px;
+      z-index: 2; position: relative;
+    }
 
-    .cta{margin-top:28px}
-    .btn{appearance:none;border:none;cursor:pointer;padding:16px 26px;border-radius:999px;background:linear-gradient(90deg,#2fa5ff,#1e4bd1);color:#fff;font-weight:800;font-size:18px;box-shadow:0 10px 30px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.25);}    
-    .btn:hover{filter:brightness(1.05)}
+    .logo {
+      width: 160px; height: 160px; display: flex; align-items: center; justify-content: center;
+    }
+    .logo img {
+      width: 100%; height: 100%; object-fit: contain;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.5));
+    }
 
-    canvas.bg{position:absolute;inset:0;z-index:1;opacity:.9;}
+    .title {
+      font-size: 64px; font-weight: 800; letter-spacing: -0.5px; margin: 0;
+    }
 
-    @media (max-width:900px){
-      .wrap{flex-direction:column;gap:18px;text-align:center}
-      .title{font-size:40px}
-      .logo{width:120px;height:120px}
+    .subtitle {
+      margin-top: 18px; font-size: 18px; color: rgba(255,255,255,.9);
+    }
+
+    .cta { margin-top: 28px; }
+    .btn {
+      appearance: none; border: none; cursor: pointer;
+      padding: 16px 26px; border-radius: 999px;
+      background: linear-gradient(90deg, var(--gold1), var(--gold3));
+      color: #000; font-weight: 800; font-size: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.22),
+                  inset 0 1px 0 rgba(255,255,255,.35);
+      transition: all 0.25s ease;
+    }
+    .btn:hover {
+      transform: scale(1.05);
+      filter: brightness(1.1);
+    }
+
+    canvas.bg {
+      position: absolute; inset: 0; z-index: 1; opacity: 0.9;
+    }
+
+    @media (max-width: 900px) {
+      .wrap { flex-direction: column; gap: 18px; text-align: center; }
+      .title { font-size: 42px; }
+      .logo { width: 120px; height: 120px; }
     }
   </style>
 </head>
 <body>
   <div class="grid"></div>
-  <canvas id="bgChart" class="bg" aria-hidden></canvas>
+  <canvas id="bgChart" class="bg"></canvas>
 
   <section class="hero">
     <div class="wrap">
+      <!-- ✅ 로고 이미지 (같은 폴더에 chartorytech-gold.png 넣기) -->
       <div class="logo" title="ChartoryTech">
-  <!-- ✅ 로컬에서도 100% 보이도록: 외부 파일 없이 인라인 SVG 골드 로고 -->
-  <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" aria-label="ChartoryTech Gold Logo" style="width:150px;height:150px;display:block;filter: drop-shadow(0 8px 18px rgba(0,0,0,.55));">
-    <defs>
-      <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#fff3b0"/>
-        <stop offset="35%" stop-color="#ffe083"/>
-        <stop offset="70%" stop-color="#f4c64f"/>
-        <stop offset="100%" stop-color="#c99624"/>
-      </linearGradient>
-    </defs>
-    <!-- 외곽 링 (C) -->
-    <circle cx="128" cy="128" r="100" fill="none" stroke="url(#goldGrad)" stroke-width="28" stroke-linecap="round"/>
-    <!-- 내측 C 곡선 두께감 -->
-    <path d="M196 80c-12-12-34-24-68-24-52 0-84 35-84 72s32 72 84 72" fill="none" stroke="url(#goldGrad)" stroke-width="20" stroke-linecap="round"/>
-    <!-- 차트 막대 3개 -->
-    <rect x="108" y="138" width="14" height="34" rx="4" fill="url(#goldGrad)"/>
-    <rect x="132" y="120" width="14" height="52" rx="4" fill="url(#goldGrad)"/>
-    <rect x="156" y="90" width="14" height="82" rx="4" fill="url(#goldGrad)"/>
-    <!-- T 기둥/가로바 -->
-    <rect x="176" y="70" width="16" height="120" rx="6" fill="url(#goldGrad)"/>
-    <rect x="148" y="70" width="44" height="16" rx="6" fill="url(#goldGrad)"/>
-  </svg>
-</div>
+        <img src="./chartorytech-gold.png" alt="ChartoryTech Gold Logo" />
+      </div>
 
       <div>
         <h1 class="title">ChartoryTech</h1>
@@ -80,83 +111,131 @@
   </section>
 
   <script>
-    // ===== 배경 차트 =====
-    const canvas = document.getElementById('bgChart');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.getElementById("bgChart");
+    const ctx = canvas.getContext("2d");
 
-    function resize(){
+    function resize() {
       const dpr = window.devicePixelRatio || 1;
       canvas.width = innerWidth * dpr;
       canvas.height = innerHeight * dpr;
-      canvas.style.width = innerWidth + 'px';
-      canvas.style.height = innerHeight + 'px';
-      ctx.setTransform(dpr,0,0,dpr,0,0);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       draw();
     }
 
-    function genSeries(n){
-      let price = 100; const arr=[];
-      for(let i=0;i<n;i++){
-        const drift=0.25; const noise=(Math.random()-0.5)*1.8;
-        const open=price; price=Math.max(10, price+drift+noise);
-        const close=price; const high=Math.max(open,close)+Math.random()*2.5;
-        const low=Math.min(open,close)-Math.random()*2.5;
-        arr.push({open,high,low,close});
+    function genSeries(n) {
+      let price = 100;
+      const arr = [];
+      for (let i = 0; i < n; i++) {
+        const drift = 0.25;
+        const noise = (Math.random() - 0.5) * 1.8;
+        const open = price;
+        price = Math.max(10, price + drift + noise);
+        const close = price;
+        const high = Math.max(open, close) + Math.random() * 2.5;
+        const low = Math.min(open, close) - Math.random() * 2.5;
+        arr.push({ open, high, low, close });
       }
       return arr;
     }
 
-    function SMA(src,len){
-      const out=[]; let sum=0; const q=[];
-      for(let i=0;i<src.length;i++){
-        q.push(src[i].close); sum+=src[i].close;
-        if(q.length>len) sum-=q.shift();
-        out.push(q.length===len? sum/len:null);
+    function SMA(src, len) {
+      const out = [];
+      let sum = 0;
+      const q = [];
+      for (let i = 0; i < src.length; i++) {
+        q.push(src[i].close);
+        sum += src[i].close;
+        if (q.length > len) sum -= q.shift();
+        out.push(q.length === len ? sum / len : null);
       }
       return out;
     }
 
-    function draw(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      const W=canvas.width, H=canvas.height;
-      const PAD=60; const N=Math.floor(W/18);
-      const series=genSeries(N);
-      const vals=series.flatMap(o=>[o.low,o.high]);
-      const min=Math.min(...vals), max=Math.max(...vals);
-      const xstep=(W-PAD*2)/N;
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const W = canvas.width,
+        H = canvas.height;
+      const PAD = 60;
+      const N = Math.floor(W / 18);
+      const series = genSeries(N);
+      const vals = series.flatMap((o) => [o.low, o.high]);
+      const min = Math.min(...vals),
+        max = Math.max(...vals);
+      const xstep = (W - PAD * 2) / N;
+      function y(v) {
+        return H - PAD - ((v - min) / (max - min)) * (H - PAD * 2);
+      }
 
-      function y(v){return H-PAD-((v-min)/(max-min))*(H-PAD*2);}
-
-      const ma20=SMA(series,20), ma60=SMA(series,60);
+      const ma20 = SMA(series, 20),
+        ma60 = SMA(series, 60);
 
       // MA20
-      ctx.lineWidth=2; ctx.strokeStyle='rgba(138,215,255,0.8)';
-      ctx.beginPath(); for(let i=0;i<N;i++){if(ma20[i]==null)continue;const X=PAD+i*xstep+5;const Y=y(ma20[i]);i===20?ctx.moveTo(X,Y):ctx.lineTo(X,Y);} ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = getComputedStyle(document.documentElement)
+        .getPropertyValue("--ma1");
+      ctx.beginPath();
+      for (let i = 0; i < N; i++) {
+        if (ma20[i] == null) continue;
+        const X = PAD + i * xstep + 5;
+        const Y = y(ma20[i]);
+        i === 20 ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y);
+      }
+      ctx.stroke();
+
       // MA60
-      ctx.strokeStyle='rgba(58,165,255,0.7)';
-      ctx.beginPath(); for(let i=0;i<N;i++){if(ma60[i]==null)continue;const X=PAD+i*xstep+5;const Y=y(ma60[i]);i===60?ctx.moveTo(X,Y):ctx.lineTo(X,Y);} ctx.stroke();
+      ctx.strokeStyle = getComputedStyle(document.documentElement)
+        .getPropertyValue("--ma2");
+      ctx.beginPath();
+      for (let i = 0; i < N; i++) {
+        if (ma60[i] == null) continue;
+        const X = PAD + i * xstep + 5;
+        const Y = y(ma60[i]);
+        i === 60 ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y);
+      }
+      ctx.stroke();
 
       // Candles
-      for(let i=0;i<N;i++){
-        const d=series[i]; const cx=PAD+i*xstep+5; const w=Math.max(4,xstep*0.5);
-        const openY=y(d.open), closeY=y(d.close), highY=y(d.high), lowY=y(d.low);
-        const up=d.close>=d.open;
-        const grad=ctx.createLinearGradient(0,Math.min(openY,closeY),0,Math.max(openY,closeY));
-        grad.addColorStop(0, up?'#6fd4ff':'#2f68ff'); grad.addColorStop(1, up?'#1ea6ff':'#1e4bd1');
-        ctx.strokeStyle=up?'rgba(111,212,255,0.9)':'rgba(47,104,255,0.85)'; ctx.lineWidth=2;
-        ctx.beginPath(); ctx.moveTo(cx,highY); ctx.lineTo(cx,lowY); ctx.stroke();
-        ctx.fillStyle=grad;
-        const top=Math.min(openY,closeY), h=Math.max(2,Math.abs(closeY-openY));
-        ctx.fillRect(cx-w/2,top,w,h);
+      for (let i = 0; i < N; i++) {
+        const d = series[i];
+        const cx = PAD + i * xstep + 5;
+        const w = Math.max(4, xstep * 0.5);
+        const openY = y(d.open),
+          closeY = y(d.close),
+          highY = y(d.high),
+          lowY = y(d.low);
+        const up = d.close >= d.open;
+        const grad = ctx.createLinearGradient(
+          0,
+          Math.min(openY, closeY),
+          0,
+          Math.max(openY, closeY)
+        );
+        grad.addColorStop(0, up ? "#6fd4ff" : "#2f68ff");
+        grad.addColorStop(1, up ? "#1ea6ff" : "#1e4bd1");
+        ctx.strokeStyle = up
+          ? "rgba(111,212,255,0.9)"
+          : "rgba(47,104,255,0.85)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, highY);
+        ctx.lineTo(cx, lowY);
+        ctx.stroke();
+        ctx.fillStyle = grad;
+        const top = Math.min(openY, closeY),
+          h = Math.max(2, Math.abs(closeY - openY));
+        ctx.fillRect(cx - w / 2, top, w, h);
       }
     }
 
     resize();
-    window.addEventListener('resize',resize);
+    window.addEventListener("resize", resize);
 
-    document.getElementById('openSOL').addEventListener('click',()=>{
-      window.location.href='solana-chart.html?market=futures&symbol=SOLUSDT&interval=1m';
-    });
+    document
+      .getElementById("openSOL")
+      .addEventListener("click", () => {
+        window.location.href =
+          "solana-chart.html?market=futures&symbol=SOLUSDT&interval=1m";
+      });
   </script>
 </body>
 </html>
