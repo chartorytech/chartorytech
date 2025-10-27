@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>SOLUSDT Futures – Live (Binance API)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- ✅ Lightweight Charts: 버전 고정 + defer -->
+    <script
+      src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"
+      defer
+    ></script>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #0b0f14;
+        color: #e5e7eb;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, 'Noto Sans KR',
+          sans-serif;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 10px 14px;
+        border-bottom: 1px solid #111827;
+      }
+      .title {
+        font-weight: 700;
+      }
+      .pill {
+        background: #1f2937;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+      select,
+      input {
+        background: #0f172a;
+        color: #e5e7eb;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 6px 10px;
+      }
+      button {
+        background: #4f46e5;
+        color: #fff;
+        border: 0;
+        border-radius: 8px;
+        padding: 6px 10px;
+        cursor: pointer;
+      }
+      #chart {
+        width: 100vw;
+        height: calc(100vh - 92px);
+      }
+      .info {
+        margin-left: auto;
+        font-size: 12px;
+        opacity: 0.9;
+      }
+      #log {
+        height: 36px;
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        border-top: 1px solid #111827;
+        color: #9ca3af;
+        font-size: 12px;
+        overflow: auto;
+        white-space: nowrap;
+      }
+      .err {
+        color: #f87171;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="title" id="hdrSymbol">SOLUSDT (Futures)</div>
+      <div class="pill">Binance REST + WS</div>
+
+      <label
+        >Interval
+        <select id="intervalSel">
+          <option value="1m">1m</option>
+          <option value="5m">5m</option>
+          <option value="15m">15m</option>
+          <option value="1h" selected>1h</option>
+          <option value="4h">4h</option>
+          <option value="1d">1d</option>
+        </select>
+      </label>
+
+      <label
+        >Symbol
+        <input id="symbolInp" value="SOLUSDT" size="10" />
+      </label>
+      <button id="applyBtn">적용</button>
+
+      <div class="info" id="status">status: booting…</div>
+    </header>
+
+    <div id="chart"></div>
+    <div id="log">log: ready</div>
+
+    <!-- ✅ 로드 완료 후 init 실행 -->
+    <script>
+      window.addEventListener('load', () => {
+        const qs = new URLSearchParams(location.search);
+        const statusEl = document.getElementById('status');
+        const logEl = document.getElementById('log');
+        const symbolInp = document.getElementById('symbolInp');
+        const intervalSel = document.getElementById('intervalSel');
+        const hdrSymbol = document.getElementById('hdrSymbol');
+
+        symbolInp.value = (qs.get('symbol') || 'SOLUSDT').toUpperCase();
+        intervalSel.value = qs.get('interval') || '1h';
+        hdrSymbol.textContent = `${symbolInp.value} (Futures)`;
+
+        function setStatus(msg) {
+          statusEl.textContent = 'status: ' + msg;
+        }
+        function log(msg, isErr = false) {
+          console[isErr ? 'error' : 'log'](msg);
+          logEl.innerHTML =
+            'log: ' + (isErr ? `<span class="err">${msg}</span>` : msg);
+          logEl.title = typeof msg === 'string' ? msg : JSON.stringify(msg);
+        }
+
+        // ✅ 라이브러리 체크
+        if (!window.LightweightCharts) {
+          setStatus('lightweight-charts not loaded');
+          log('charts lib missing (CDN 차단?)', true);
+          return;
+        }
+
+        setStatus('charts initializing');
+
+        // === 차트 ===
+        const chart = LightweightCharts.createChart(
+          document.getElementById('chart'),
+          {
+            layout: { background: { color: '#0b0f14' }, textColor: '#d1d5db' },
+            grid: {
+              vertLines: { color: '#1f2937' },
+              horzLines: { color: '#1f2937' },
+            },
+            rightPriceScale: { borderColor: '#111827' },
+            timeScale: { borderColor: '#111827' },
+            crosshair: { mode: 1 },
+          }
+        );
+        const candleSeries = chart.addCandlestickSeries();
+        const ema9Series = chart.addLineSeries({ lineWidth: 1 });
+        const ema21Series = chart.addLineSeries({ lineWidth: 1 });
+
+        const resize = () =>
+          chart.applyOptions({
+            width: window.innerWidth,
+            height: window.innerHeight - 92,
+          });
+        window.addEventListener('resize', resize);
+        resize();
+
+        // === EMA ===
+        function ema(values, period) {
+          const k = 2 / (period + 1);
+          const out = [];
+          let prev;
+          for (let v of values) {
+            prev = prev == null ? v : v * k + prev * (1 - k);
+            out.push(prev);
+          }
+          return out;
+        }
+
+        // === REST ===
+        async function fetchKlines(symbol, interval, limit = 500) {
+          const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+          const res = await fetch(url, { mode: 'cors' });
+          if (!res.ok) throw new Error('klines ' + res.status);
+          return (await res.json()).map((k) => ({
+            time: Math.floor(k[0] / 1000),
+            open: +k[1],
+            high: +k[2],
+            low: +k[3],
+            close: +k[4],
+            volume: +k[5],
+          }));
+        }
+
+        // === WebSocket ===
+        let ws,
+          reconnectTimer,
+          lastCloses = [];
+        function closeWS() {
+          if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+          }
+          if (ws) {
+            try {
+              ws.close();
+            } catch {}
+            ws = null;
+          }
+        }
+        function openWS(symbol, interval) {
+          closeWS();
+          const stream = `${symbol.toLowerCase()}@kline_${interval}`;
+          const url = `wss://fstream.binance.com/ws/${stream}`;
+          setStatus('ws connecting…');
+          log('open ' + url);
+          ws = new WebSocket(url);
+          ws.onopen = () => setStatus('ws connected');
+          ws.onmessage = (ev) => {
+            const msg = JSON.parse(ev.data);
+            if (!msg.k) return;
+            const k = msg.k;
+            const bar = {
+              time: Math.floor(k.t / 1000),
+              open: +k.o,
+              high: +k.h,
+              low: +k.l,
+              close: +k.c,
+            };
+            candleSeries.update(bar);
+
+            // EMA 업데이트
+            if (
+              lastCloses.length &&
+              bar.time >= lastCloses[lastCloses.length - 1].time
+            ) {
+              if (bar.time === lastCloses[lastCloses.length - 1].time)
+                lastCloses[lastCloses.length - 1].value = bar.close;
+              else lastCloses.push({ time: bar.time, value: bar.close });
+              const closes = lastCloses.map((d) => d.value),
+                times = lastCloses.map((d) => d.time);
+              const e9 = ema(closes, 9),
+                e21 = ema(closes, 21);
+              ema9Series.setData(
+                times.map((t, i) => ({ time: t, value: e9[i] }))
+              );
+              ema21Series.setData(
+                times.map((t, i) => ({ time: t, value: e21[i] }))
+              );
+            }
+          };
+          ws.onerror = () => {
+            setStatus('ws error');
+            log('ws error', true);
+          };
+          ws.onclose = () => {
+            setStatus('ws closed — retry 2s');
+            reconnectTimer = setTimeout(() => openWS(symbol, interval), 2000);
+          };
+        }
+
+        async function load(symbol, interval) {
+          try {
+            setStatus('loading history…');
+            const data = await fetchKlines(symbol, interval, 500);
+            candleSeries.setData(data);
+
+            lastCloses = data.map((d) => ({ time: d.time, value: d.close }));
+            const closes = lastCloses.map((d) => d.value),
+              times = lastCloses.map((d) => d.time);
+            const e9 = ema(closes, 9),
+              e21 = ema(closes, 21);
+            ema9Series.setData(
+              times.map((t, i) => ({ time: t, value: e9[i] }))
+            );
+            ema21Series.setData(
+              times.map((t, i) => ({ time: t, value: e21[i] }))
+            );
+
+            hdrSymbol.textContent = `${symbol} (Futures)`;
+            setStatus('history loaded');
+            openWS(symbol, interval);
+          } catch (e) {
+            setStatus('error');
+            log('load err: ' + e.message, true);
+          }
+        }
+
+        document.getElementById('applyBtn').addEventListener('click', () => {
+          const sym = symbolInp.value.trim().toUpperCase();
+          const iv = intervalSel.value;
+          history.replaceState(
+            null,
+            '',
+            `${location.pathname}?symbol=${encodeURIComponent(
+              sym
+            )}&interval=${encodeURIComponent(iv)}`
+          );
+          load(sym, iv);
+        });
+
+        // ✅ 최초 로드
+        load(symbolInp.value, intervalSel.value);
+
+        // 종료 정리
+        window.addEventListener('beforeunload', closeWS);
+      });
+    </script>
+  </body>
+</html>
