@@ -22,3 +22,5 @@ async function updateAuthLink(){
   const { data } = await supabaseClient.auth.getUser();
   if(data.user){ link.textContent="내 계정"; link.href="chart.html"; } else { link.textContent="로그인"; link.href="login.html"; }
 }
+const SUPABASE_URL = "https://ueetacvhykmsfqtpqhywp.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....."; // anon key
