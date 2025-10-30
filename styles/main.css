@@ -1,0 +1,33 @@
+
+:root{
+  --bg:#0b0f14; --panel:#121821; --text:#e6e9ef; --muted:#94a3b8;
+  --accent:#d4af37; --buy:#10b981; --sell:#ef4444; --grid:#1f2937;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans KR",sans-serif;background:var(--bg);color:var(--text)}
+.header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--grid);background:var(--panel)}
+.header img{height:40px;width:40px;border-radius:8px;object-fit:cover}
+.brand{font-weight:700}
+.brand small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.wrap{max-width:1100px;margin:36px auto;padding:0 16px}
+.card{background:var(--panel);border:1px solid #233043;border-radius:16px;padding:20px;box-shadow:0 10px 24px rgba(0,0,0,.25)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.badge{border:1px solid #2b3a4d;border-radius:999px;padding:2px 8px;color:var(--muted);font-size:12px}
+.btn{background:#0b1220;color:var(--text);border:1px solid #2b3a4d;border-radius:10px;padding:10px 14px;text-decoration:none;font-weight:600}
+.btn.primary{background:var(--accent);color:#161616;border-color:#b8922b}
+.btn:hover{filter:brightness(1.06)}
+.buttons{display:flex;flex-wrap:wrap;gap:10px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.controls input,.controls select,.controls button{background:#0b1220;color:var(--text);border:1px solid #2b3a4d;border-radius:10px;padding:8px 10px}
+.controls button{cursor:pointer}
+.small{font-size:12px;color:var(--muted)}
+.chart-wrap{height:70vh;min-height:440px;position:relative}
+#chart{position:absolute;inset:0}
+#overlay{position:absolute;inset:0;pointer-events:auto}
+.toolbar{display:flex;gap:8px;margin:8px 0}
+.tool{background:#0b1220;border:1px solid #2b3a4d;border-radius:8px;padding:6px 10px;cursor:pointer}
+.tool.active{outline:2px solid var(--accent)}
+footer{padding:16px;text-align:center;color:var(--muted);border-top:1px solid var(--grid);margin-top:36px}
+.status{margin-left:auto}
+.right{margin-left:auto}
