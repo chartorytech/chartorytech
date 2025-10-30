@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChartoryTech</title><link rel="stylesheet" href="./styles/main.css"></head>
+<body>
+<header class="header">
+  <img src="./assets/logo.jpg" alt="ChartoryTech"><div class="brand">ChartoryTech <small>실시간 차트 & 멤버십</small></div>
+  <span class="right"></span><a class="btn" href="./login.html" id="authLink">로그인</a>
+</header>
+<main class="wrap"><div class="card">
+  <h1>환영합니다 👋</h1><p class="small">실시간 선물/현물 차트 · 지표 실험 · 학습 허브</p>
+  <div class="buttons">
+    <a class="btn primary" href="./chart.html?market=futures&symbol=SOLUSDT&interval=1h">SOLUSDT 1h 실시간 차트</a>
+    <a class="btn" href="./pages/binance-basics.html">바이낸스 사용법</a>
+    <a class="btn" href="./pages/futures-basics.html">해외선물 개념</a>
+    <a class="btn" href="./pages/indicators.html">지표 설명</a>
+  </div>
+</div></main>
+<footer>© ChartoryTech</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./scripts/auth.js"></script>
+<script>updateAuthLink()</script>
+</body></html>
