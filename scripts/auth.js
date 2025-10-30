@@ -23,4 +23,4 @@ async function updateAuthLink(){
   if(data.user){ link.textContent="내 계정"; link.href="chart.html"; } else { link.textContent="로그인"; link.href="login.html"; }
 }
 const SUPABASE_URL = "https://ueetacvhykmsfqtpqhywp.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....."; // anon key
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVlZXRhY3ZoeWttc2ZxdHFoeXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MTk2NzgsImV4cCI6MjA3NzM5NTY3OH0.7bRp6O0AjNOeTDBLyBRTXXLVXKwhHX7ve4PotqZ1JMQ"; // anon key
